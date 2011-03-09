@@ -94,6 +94,14 @@ main(int argc, const char **argv)
 	  // What does mean stall?
 	  // x, y, th, world frame or robot frame?
 
+/* stall indica si después de aplicar una consigna a los motores las ruedas se
+ * mueven. Si stall vale 1 el robot no se está moviendo porque se ha encontrado
+ * con un obstáculo. Sin embargo, si el suelo es resbaladizo, al alcanzar un
+ * obstáculo puede que las ruedas patinen. Como en este caso los encoders sí
+ * detectarían movimiento stall valdría 0 y no podríamos detectar el obstáculo
+ * sólo con odometría.
+ */
+
 	  // Draw current robot pose
 	  puntos[0].px=position2d->px;
 	  puntos[0].py=position2d->py;
