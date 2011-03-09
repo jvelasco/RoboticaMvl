@@ -15,6 +15,7 @@ main(int argc, const char **argv)
   double arraya[5]={3.14 , -1.57 ,  0.0 , 1.57 , 1.57};
 
   //sonar
+  playerc_sonar_t *sonar;
 
   //laser
 
@@ -56,7 +57,16 @@ main(int argc, const char **argv)
  */
 
   // Create and subscribe to a sonar device
-  
+  sonar = playerc_sonar_create(client, 0);
+  if (playerc_sonar_subscribe(sonar, PLAYER_OPEN_MODE) != 0)
+    {
+      fprintf(stderr, "error: %s\n", playerc_error_str());
+      return -1;
+    }
+
+  // Fixing initial position
+  playerc_position2d_set_odom(position2d,5.0,0.0,1.57);
+
   // Create and subscribe to a graphics device
   graficos = playerc_graphics2d_create(client, 0);
   if (playerc_graphics2d_subscribe(graficos, PLAYER_OPEN_MODE) != 0)
@@ -108,7 +118,8 @@ main(int argc, const char **argv)
 	  playerc_graphics2d_draw_points (graficos, puntos, 1);
 	  
 	  // Print sonar readings
-	
+
+	  // printf("sonar : x %f y %f th %f stall %d\n",sonar->px, sonar->py, sonar->pa, sonar->stall); 
 	}
     }
 
@@ -117,6 +128,7 @@ main(int argc, const char **argv)
   // position2d
   playerc_position2d_unsubscribe(position2d); playerc_position2d_destroy(position2d);
   // sonar
+  playerc_sonar_unsubscribe(sonar); playerc_sonar_destroy(sonar);
 
   // graphics2d
   playerc_graphics2d_unsubscribe(graficos); playerc_graphics2d_destroy(graficos);
