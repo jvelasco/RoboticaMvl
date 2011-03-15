@@ -43,7 +43,7 @@ main(int argc, const char **argv)
     return -1;
 
   // Create and subscribe to a position2d device.
-  position2d = playerc_position2d_create(client, 0);
+  position2d = playerc_position2d_create(client, 1);
   if (playerc_position2d_subscribe(position2d, PLAYER_OPEN_MODE))
     return -1;
 

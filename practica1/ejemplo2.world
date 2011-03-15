@@ -38,7 +38,7 @@ pioneer2dx
 (		  
   # can refer to the robot by this name
   name "r1"
-  pose [ 0 3 0 45 ] 
+  pose [ 0 2.3 0 45 ] 
 
 #  ctrl "wander"
   localization "odom"
