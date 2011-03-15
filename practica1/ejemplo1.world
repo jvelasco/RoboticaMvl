@@ -47,7 +47,15 @@ pioneer2dx
   # testeo
 #  ctrl "wander"
   localization "odom"
-  odom_error [ 0.05 0.05 0 0.05 ]
+  odom_error [ 0 0 0 0 ] 
+# Pregunta 1: Cuando se establece un error en la odometría, la información de
+# posición que el cliente imprime en el terminal es diferente, puesto que se ve
+# afectada por el error en las medidas de la odometría. No obstante el robot se
+# mueve siguiendo la misma trayectoria que cuando este error es nulo debido a
+# que la consigna de velocidad que se le indica al robot no depende de la
+# información obtenida.
+# 
+
   # report error-free position in world coordinates
 #  localization "gps"
 #  localization_origin [ 0 0 0 0 ]
