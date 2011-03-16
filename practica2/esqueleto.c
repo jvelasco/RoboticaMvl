@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include <libplayerc/playerc.h>
-
+#define SECURITY_THRESHOLD 0.6
 int
 main(int argc, const char **argv)
 {
@@ -13,6 +13,7 @@ main(int argc, const char **argv)
   double arrayx[5]={ 5.0 ,  -5.0 , -5.0 ,  5.0 ,  5.0};
   double arrayy[5]={ 2.5 ,   2.5 , -2.5 , -2.5 ,  0.0};
   double arraya[5]={3.14 , -1.57 ,  0.0 , 1.57 , 1.57};
+  int stop_go,stop_go_prev; //0- sin obtaculo, 1-parado
 
   //sonar
   playerc_sonar_t *sonar;
@@ -175,17 +176,33 @@ Geometria del sonar: 16 dispositivos
 	printf("Lectura del sonar\n");
 	for (is = 0; is < sonar->scan_count; is++) {
 		printf("(%d)%g\t", is+1, sonar->scan[is]);
+		/* puntos detectados por el sonar dibujando un polígono alrededor del robot */
 		perimetro[is].px=sonar->poses[is].px+sonar->scan[is]*cos(sonar->poses[is].pyaw);
 		perimetro[is].py=sonar->poses[is].py+sonar->scan[is]*sin(sonar->poses[is].pyaw);
+		/* puntos detectados por el sonar dibujados sobre el mapa */
 		puntos[0].px=position2d->px+perimetro[is].px*cos(position2d->pa)-perimetro[is].py*sin(position2d->pa);
 		puntos[0].py=position2d->py+perimetro[is].py*cos(position2d->pa)+perimetro[is].px*sin(position2d->pa);
 		playerc_graphics2d_draw_points (gfx_mapa, puntos, 1);
+		/* área de seguridad */
+		if (sonar->scan[is] < SECURITY_THRESHOLD) {
+			stop_go++;
+					}
 
 	}
+	if(stop_go)
+	{
+		if (0 != playerc_position2d_set_cmd_vel(position2d, 0, 0, 0, 1))
+			    return -1;
+		stop_go_prev=stop_go;
+	}else if(stop_go_prev)
+	{
+		playerc_position2d_set_cmd_pose(position2d, position2d_target.px , position2d_target.py, position2d_target.pa , 1);
+	}
+	stop_go=0;	
 	playerc_graphics2d_clear(gfx_robot); 
 	playerc_graphics2d_draw_polyline (gfx_robot, perimetro, sonar->scan_count);
 	printf("\n");
-	
+
 
     }
   }
