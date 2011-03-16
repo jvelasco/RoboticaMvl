@@ -47,7 +47,7 @@ pioneer2dx
   # testeo
 #  ctrl "wander"
   localization "odom"
-  odom_error [ 0 0 0 1 ]
+  odom_error [ 0 0 0 0 ]
 
 # Cuando el error de odometría es distinta de cero la percepción del robot no
 # es ideal lo que le lleva a desviarse de su ruta programada. Esto se aprecia

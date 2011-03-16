@@ -6,7 +6,7 @@
 int
 main(int argc, const char **argv)
 {
-  int i;  
+  int i, is;  
   playerc_client_t *client;
   playerc_position2d_t *position2d;
   player_pose2d_t position2d_target;
@@ -20,8 +20,10 @@ main(int argc, const char **argv)
   //laser
 
   //drawing
-  playerc_graphics2d_t *graficos;
+  playerc_graphics2d_t *gfx_robot;
+  playerc_graphics2d_t *gfx_mapa;
   player_point_2d_t *puntos;
+  player_point_2d_t *perimetro;
   player_color_t color;
   puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(1)); //(1) punto
   color.red=255; color.green=0; color.blue=0;
@@ -63,23 +65,70 @@ main(int argc, const char **argv)
       fprintf(stderr, "error: %s\n", playerc_error_str());
       return -1;
     }
+/* Obtener la geometría de los sensores de ultrasonidos sobre el pioneer 2 */
+  if (playerc_sonar_get_geom(sonar) != 0) {
+      fprintf(stderr, "error: %s\n", playerc_error_str());
+      return -1;
+  }
+
+  printf("Geometria del sonar: %d dispositivos\n", sonar->pose_count);
+  for (is = 0; is < sonar->pose_count; is++) {
+  	printf("%d - x: %g\ty: %g\tz: %g\troll: %g\tpitch: %g\tyaw: %g\t\n",
+				is+1,
+				sonar->poses[is].px,
+				sonar->poses[is].py,
+				sonar->poses[is].pz,
+				sonar->poses[is].proll,
+				sonar->poses[is].ppitch,
+				sonar->poses[is].pyaw);
+  }
+/* Resultado: 
+
+Geometria del sonar: 16 dispositivos
+1 - x: 0.075	y: 0.13	z: 0	roll: 0	pitch: 0	yaw: 1.5708	
+2 - x: 0.115	y: 0.115	z: 0	roll: 0	pitch: 0	yaw: 0.872665	
+3 - x: 0.15	y: 0.08	z: 0	roll: 0	pitch: 0	yaw: 0.523599	
+4 - x: 0.17	y: 0.025	z: 0	roll: 0	pitch: 0	yaw: 0.174533	
+5 - x: 0.17	y: -0.025	z: 0	roll: 0	pitch: 0	yaw: -0.174533	
+6 - x: 0.15	y: -0.08	z: 0	roll: 0	pitch: 0	yaw: -0.523599	
+7 - x: 0.115	y: -0.115	z: 0	roll: 0	pitch: 0	yaw: -0.872665	
+8 - x: 0.075	y: -0.13	z: 0	roll: 0	pitch: 0	yaw: -1.5708	
+9 - x: -0.155	y: -0.13	z: 0	roll: 0	pitch: 0	yaw: -1.5708	
+10 - x: -0.195	y: -0.115	z: 0	roll: 0	pitch: 0	yaw: -2.26893	
+11 - x: -0.23	y: -0.08	z: 0	roll: 0	pitch: 0	yaw: -2.61799	
+12 - x: -0.25	y: -0.025	z: 0	roll: 0	pitch: 0	yaw: -2.96706	
+13 - x: -0.25	y: 0.025	z: 0	roll: 0	pitch: 0	yaw: 2.96706	
+14 - x: -0.23	y: 0.08	z: 0	roll: 0	pitch: 0	yaw: 2.61799	
+15 - x: -0.195	y: 0.115	z: 0	roll: 0	pitch: 0	yaw: 2.26893	
+16 - x: -0.155	y: 0.13	z: 0	roll: 0	pitch: 0	yaw: 1.5708	
+
+*/
+  perimetro=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(sonar->pose_count)); //(1) punto
 
   // Fixing initial position
   playerc_position2d_set_odom(position2d,5.0,0.0,1.57);
 
   // Create and subscribe to a graphics device
-  graficos = playerc_graphics2d_create(client, 0);
-  if (playerc_graphics2d_subscribe(graficos, PLAYER_OPEN_MODE) != 0)
+  gfx_robot = playerc_graphics2d_create(client, 1);
+  if (playerc_graphics2d_subscribe(gfx_robot, PLAYER_OPEN_MODE) != 0)
+    {
+      fprintf(stderr, "error: %s\n", playerc_error_str());
+      return -1;
+    }
+  gfx_mapa = playerc_graphics2d_create(client, 0);
+  if (playerc_graphics2d_subscribe(gfx_mapa, PLAYER_OPEN_MODE) != 0)
     {
       fprintf(stderr, "error: %s\n", playerc_error_str());
       return -1;
     }
 
   // Fix colour
-  playerc_graphics2d_setcolor (graficos, color); 
+  playerc_graphics2d_setcolor (gfx_mapa, color); 
+  playerc_graphics2d_setcolor (gfx_robot, color); 
 
   // Clear screen
-  playerc_graphics2d_clear(graficos); 
+  playerc_graphics2d_clear(gfx_mapa); 
+  playerc_graphics2d_clear(gfx_robot); 
 
   // Enable motors 
   playerc_position2d_enable(position2d,1);
@@ -115,13 +164,31 @@ main(int argc, const char **argv)
 	  // Draw current robot pose
 	  puntos[0].px=position2d->px;
 	  puntos[0].py=position2d->py;
-	  playerc_graphics2d_draw_points (graficos, puntos, 1);
+	  playerc_graphics2d_draw_points (gfx_mapa, puntos, 1);
 	  
 	  // Print sonar readings
-
-	  // printf("sonar : x %f y %f th %f stall %d\n",sonar->px, sonar->py, sonar->pa, sonar->stall); 
+	if (playerc_sonar_get_geom(sonar) != 0) {
+		fprintf(stderr, "error: %s\n", playerc_error_str());
+		return -1;
 	}
+
+	printf("Lectura del sonar\n");
+	for (is = 0; is < sonar->scan_count; is++) {
+		printf("(%d)%g\t", is+1, sonar->scan[is]);
+		perimetro[is].px=sonar->poses[is].px+sonar->scan[is]*cos(sonar->poses[is].pyaw);
+		perimetro[is].py=sonar->poses[is].py+sonar->scan[is]*sin(sonar->poses[is].pyaw);
+		puntos[0].px=position2d->px+perimetro[is].px*cos(position2d->pa)-perimetro[is].py*sin(position2d->pa);
+		puntos[0].py=position2d->py+perimetro[is].py*cos(position2d->pa)+perimetro[is].px*sin(position2d->pa);
+		playerc_graphics2d_draw_points (gfx_mapa, puntos, 1);
+
+	}
+	playerc_graphics2d_clear(gfx_robot); 
+	playerc_graphics2d_draw_polyline (gfx_robot, perimetro, sonar->scan_count);
+	printf("\n");
+	
+
     }
+  }
 
 
   // Unsuscribe and Destroy
@@ -131,7 +198,8 @@ main(int argc, const char **argv)
   playerc_sonar_unsubscribe(sonar); playerc_sonar_destroy(sonar);
 
   // graphics2d
-  playerc_graphics2d_unsubscribe(graficos); playerc_graphics2d_destroy(graficos);
+  playerc_graphics2d_unsubscribe(gfx_mapa); playerc_graphics2d_destroy(gfx_mapa);
+  playerc_graphics2d_unsubscribe(gfx_robot); playerc_graphics2d_destroy(gfx_robot);
   // client
   playerc_client_disconnect(client); playerc_client_destroy(client);
 
