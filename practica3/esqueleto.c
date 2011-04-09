@@ -203,7 +203,7 @@ int main(int argc, const char **argv)
 				playerc_graphics2d_draw_points(gfx_mapa, puntos,
 							       1);
 				/* área de seguridad */
-				if (sonar->scan[is] < SECURITY_THRESHOLD) {
+				if  (sonar->scan[is] < SECURITY_THRESHOLD) {
 					stop_go++;
 				}
 			}
@@ -214,11 +214,38 @@ int main(int argc, const char **argv)
 							 sonar->scan_count);
 
 			/* Mecanismo Stop&Go */
-			if (stop_go) {	/* Obstáculo detectado: parar */
-				if (0 !=
-				    playerc_position2d_set_cmd_vel(position2d,
-								   0, 0, 0, 1))
-					return -1;
+			if (stop_go) {	/* Obstáculo detectado: parar
+					   					 * */
+			  printf("Sonar %g %g\n",sonar->scan[3],sonar->scan[4]);
+
+			  if((sonar->scan[3]< 0.3)||(sonar->scan[4]< 0.3)||(sonar->scan[2]< 0.3)||(sonar->scan[5]< 0.3))
+			  {
+			    if(sonar->scan[3]*sonar->scan[2]>sonar->scan[4]*sonar->scan[5])
+			  
+			    {
+			      if (0 !=
+				  playerc_position2d_set_cmd_vel(position2d,
+								 0.00, 0,0.3, 1))
+				  
+				return -1;
+			    }else
+			    {
+			      if (0 !=
+				  playerc_position2d_set_cmd_vel(position2d,
+								 0.00, 0,-0.3, 1))
+				  
+				return -1;
+			    }
+			  }
+			  else{
+			    if (0 !=
+				  playerc_position2d_set_cmd_vel(position2d,
+								 0.1, 0,0, 1))
+				  
+				return -1;
+			  }
+			  
+			    
 			} else if (stop_go_prev) {	/* No hay obstáculo y estamos parados: reanudar la marcha */
 				playerc_position2d_set_cmd_pose(position2d,
 								position2d_target.
