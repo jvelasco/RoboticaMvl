@@ -10,7 +10,8 @@
 #include <math.h>
 
 #include <libplayerc/playerc.h>
-#define SECURITY_THRESHOLD 0.6
+#define SECURITY_THRESHOLD 0.7
+
 #define DISPLAY_WIDTH	50
 #define DISPLAY_HEIGHT	50
 #define DISPLAY_STEP	4
@@ -210,42 +211,32 @@ int main(int argc, const char **argv)
 
 			/* dibjuar los puntos calculados */
 			playerc_graphics2d_clear(gfx_robot);
-			playerc_graphics2d_draw_polyline(gfx_robot, perimetro,
-							 sonar->scan_count);
+			playerc_graphics2d_draw_polyline(gfx_robot, perimetro, sonar->scan_count);
 
-			/* Mecanismo Stop&Go */
-			if (stop_go) {	/* Obstáculo detectado: parar
-					   					 * */
-			  printf("Sonar %g %g\n",sonar->scan[3],sonar->scan[4]);
+			if (stop_go) {	/* Obstáculo detectado: parar  */
+				printf("Sonar %g %g\n",sonar->scan[3],sonar->scan[4]);
 
-			  if((sonar->scan[3]< 0.3)||(sonar->scan[4]< 0.3)||(sonar->scan[2]< 0.3)||(sonar->scan[5]< 0.3))
-			  {
-			    if(sonar->scan[3]*sonar->scan[2]>sonar->scan[4]*sonar->scan[5])
-			  
-			    {
-			      if (0 !=
-				  playerc_position2d_set_cmd_vel(position2d,
-								 0.00, 0,0.3, 1))
+				if((sonar->scan[2]< 0.3) ||
+				   (sonar->scan[3]< 0.3) ||
+                                   (sonar->scan[4]< 0.3) ||
+				   (sonar->scan[5]< 0.3)) {
+					if(sonar->scan[3] * sonar->scan[2] >
+					   sonar->scan[4] * sonar->scan[5]) { /* Obstáculo por la derecha */
+						/* girar a la izquierda */
+						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,0.3, 1))
+							return -1;
+					} else { /* Obstáculo por la izquierda */
+						/* girar a la derecha */
+						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,-0.3, 1))
+							return -1;
+					}
+				} else {
+					/* De frente */
+					if (0 != playerc_position2d_set_cmd_vel(position2d, 0.1, 0,0, 1))
+						return -1;
+				}
+				
 				  
-				return -1;
-			    }else
-			    {
-			      if (0 !=
-				  playerc_position2d_set_cmd_vel(position2d,
-								 0.00, 0,-0.3, 1))
-				  
-				return -1;
-			    }
-			  }
-			  else{
-			    if (0 !=
-				  playerc_position2d_set_cmd_vel(position2d,
-								 0.1, 0,0, 1))
-				  
-				return -1;
-			  }
-			  
-			    
 			} else if (stop_go_prev) {	/* No hay obstáculo y estamos parados: reanudar la marcha */
 				playerc_position2d_set_cmd_pose(position2d,
 								position2d_target.
@@ -257,19 +248,6 @@ int main(int argc, const char **argv)
 			}
 			stop_go_prev = stop_go;
 			stop_go = 0;
-
-/* El parámetro SECURITY_THRESHOLD define el área de seguridad alrededor del
- * robot en el cual si se detecta un objeto el robot se detiene.
- *
- * Este valor no puede ser ni muy pequeño, porque el robot no tendría tiempo de
- * detenerse, ni muy grande, o de lo contrario detectaría las paredes del
- * pasillo como obstáculos y nunca se movería
- *
- * Si este mecanismo funciona correctamente y nunca se golpea un obstáculo,
- * entonces stall siempre debe valer cero. En el caso de que stall llegara a
- * valer 1 las posibilidades serían haber encontrado un obstáculo no detectado
- * por el sonar o algún problema en los motores.
- */
 
 		}
 	}
