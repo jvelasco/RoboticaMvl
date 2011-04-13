@@ -203,9 +203,18 @@ int main(int argc, const char **argv)
 				    perimetro[is].px * sin(position2d->pa);
 				playerc_graphics2d_draw_points(gfx_mapa, puntos,
 							       1);
-				/* área de seguridad */
-				if  (sonar->scan[is] < SECURITY_THRESHOLD) {
-					stop_go++;
+				if((is<=5)&&(is>=2))
+				{
+				  /* área de seguridad */
+				  if  (sonar->scan[is] < SECURITY_THRESHOLD) {
+				    stop_go++;
+				  }
+				 
+				}else
+				{
+				  if  (sonar->scan[is] < SECURITY_THRESHOLD/2) {
+				    stop_go++;
+				  }
 				}
 			}
 
