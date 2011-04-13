@@ -10,7 +10,7 @@
 #include <math.h>
 
 #include <libplayerc/playerc.h>
-#define SECURITY_THRESHOLD 0.7
+#define SECURITY_THRESHOLD 0.65
 
 #define DISPLAY_WIDTH	50
 #define DISPLAY_HEIGHT	50
