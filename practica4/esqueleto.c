@@ -23,10 +23,11 @@ main(int argc, const char **argv)
   playerc_graphics2d_t *graficos;
   player_point_2d_t *puntos;
   player_color_t color;
-  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(1)); //(1) punto
+  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(10000)); //(1) punto
   color.red=255; color.green=0; color.blue=0;
   //localize:
   playerc_localize_t *localize;
+  int p;
 
   // Create a client and connect it to the server.
   client = playerc_client_create(NULL, "localhost", 6665);
@@ -99,16 +100,27 @@ main(int argc, const char **argv)
 	{
 	  // Wait for new data from server
 	  playerc_client_read(client);
+	  playerc_localize_get_particles(localize);
+
 	  
 	  // Print current robot pose
-	  printf("position2d : x %f y %f th %f stall %d\n",position2d_amcl->px, position2d_amcl->py, position2d_amcl->pa, position2d_amcl->stall); 
+	   printf("position2d : x %f y %f th %f stall %d\n",position2d_amcl->px, position2d_amcl->py, position2d_amcl->pa, position2d_amcl->stall); 
 	  // What does mean stall?
 	  // x, y, th, world frame or robot frame?
 
+	  // Clear screen
+	  playerc_graphics2d_clear(graficos); 
+
+
 	  // Draw current robot pose
-	  puntos[0].px=position2d_amcl->px;
-	  puntos[0].py=position2d_amcl->py;
-	  playerc_graphics2d_draw_points (graficos, puntos, 1);
+	   printf("num particulas: %d num hipotesis %d\n",localize->num_particles,localize->hypoth_count);
+	  for(p=0;p<localize->num_particles;p++){
+	  
+	    puntos[p].px=(float)(localize->particles[p].pose[0]);
+	    puntos[p].py=(float)(localize->particles[p].pose[1]);
+	  }
+	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles);
+
 	  
 	  // Print sonar readings
 	
