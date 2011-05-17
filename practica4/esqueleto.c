@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <math.h>
 
+#define RADIO_AZUL 0.5
+
 #include <libplayerc/playerc.h>
+
+//Declaración
+
+void DibujaCirculo(double, double, double, player_color_t);
+
+playerc_graphics2d_t *graficos;
 
 int
 main(int argc, const char **argv)
@@ -20,11 +28,12 @@ main(int argc, const char **argv)
   //laser
 
   //drawing
-  playerc_graphics2d_t *graficos;
   player_point_2d_t *puntos;
-  player_color_t color;
+  player_color_t rojo, verde, azul;
   puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(10000)); //(1) punto
-  color.red=255; color.green=0; color.blue=0;
+  rojo.red=255; rojo.green=0; rojo.blue=0;
+  verde.red=0; verde.green=0; verde.blue=255;
+  azul.red=0; azul.green=0; azul.blue=255;
   //localize:
   playerc_localize_t *localize;
   int p;
@@ -77,8 +86,6 @@ main(int argc, const char **argv)
   //crear set de particulas
   playerc_localize_get_particles(localize);
 
-  // Fix colour
-  playerc_graphics2d_setcolor (graficos, color); 
 
   // Clear screen
   playerc_graphics2d_clear(graficos); 
@@ -114,13 +121,18 @@ main(int argc, const char **argv)
 
 	  // Draw current robot pose
 	   printf("num particulas: %d num hipotesis %d\n",localize->num_particles,localize->hypoth_count);
-	  for(p=0;p<localize->num_particles;p++){
+	  for(p=0;p<localize->num_particles;p+=10){ // TODO: provisional..
 	  
 	    puntos[p].px=(float)(localize->particles[p].pose[0]);
 	    puntos[p].py=(float)(localize->particles[p].pose[1]);
 	  }
-	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles);
+	  // Fix colour
+	  playerc_graphics2d_setcolor (graficos, rojo); 
+	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles/11); //TODO: pintar todas
+	  DibujaCirculo(localize->mean[0], localize->mean[1], localize->variance, verde);
+	  DibujaCirculo(position2d_amcl->px, position2d_amcl->py, RADIO_AZUL, azul);
 
+	  printf("(%g, %g) var %g\n", localize->mean[0], localize->mean[1], localize->variance);
 	  
 	  // Print sonar readings
 	
@@ -142,4 +154,36 @@ main(int argc, const char **argv)
 
   // End
   return 0;
+}
+
+//Definición. El centro es (xc, yc). También se indican el radio y el color
+//Debe existir la variable global "graficos" que es el proxie al dispositivo graphics2d
+
+void DibujaCirculo(double xc, double yc, double radio, player_color_t color)
+{
+	double x[10], senos[10], cosenos[10], inc;
+	int i;
+	player_point_2d_t puntos[10];
+
+        inc=2*M_PI/10;
+	x[0]=0.0;
+	for(i=1;i<10;i++)
+        {
+		
+            x[i]=x[i-1]+inc;
+        }
+	for(i=0;i<10;i++)
+	{
+	    senos[i]=sin(x[i]);
+	    cosenos[i]=cos(x[i]);
+	}
+        for(i=0;i<10;i++)
+	{
+	    puntos[i].px=xc+radio*cosenos[i];
+	    puntos[i].py=yc+radio*senos[i];
+	}
+
+	playerc_graphics2d_setcolor (graficos, color);
+	playerc_graphics2d_draw_polyline (graficos, puntos, 10);
+
 }
