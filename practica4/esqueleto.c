@@ -32,7 +32,7 @@ main(int argc, const char **argv)
   player_color_t rojo, verde, azul;
   puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(10000)); //(1) punto
   rojo.red=255; rojo.green=0; rojo.blue=0;
-  verde.red=0; verde.green=0; verde.blue=255;
+  verde.red=0; verde.green=128; verde.blue=0;
   azul.red=0; azul.green=0; azul.blue=255;
   //localize:
   playerc_localize_t *localize;
