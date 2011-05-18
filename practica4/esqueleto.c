@@ -2,7 +2,7 @@
 #include <math.h>
 
 #define RADIO_AZUL 0.5
-
+#define PF_MAX_SAMPLES 250000
 #include <libplayerc/playerc.h>
 
 //Declaración
@@ -30,7 +30,7 @@ main(int argc, const char **argv)
   //drawing
   player_point_2d_t *puntos;
   player_color_t rojo, verde, azul;
-  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(10000)); //(1) punto
+  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(PF_MAX_SAMPLES)); //(1) punto
   rojo.red=255; rojo.green=0; rojo.blue=0;
   verde.red=0; verde.green=128; verde.blue=0;
   azul.red=0; azul.green=0; azul.blue=255;
@@ -121,15 +121,15 @@ main(int argc, const char **argv)
 
 	  // Draw current robot pose
 	   printf("num particulas: %d num hipotesis %d\n",localize->num_particles,localize->hypoth_count);
-	  for(p=0;p<localize->num_particles;p+=10){ // TODO: provisional..
+	  for(p=0;p<localize->num_particles;p++){
 	  
 	    puntos[p].px=(float)(localize->particles[p].pose[0]);
 	    puntos[p].py=(float)(localize->particles[p].pose[1]);
 	  }
 	  // Fix colour
 	  playerc_graphics2d_setcolor (graficos, rojo); 
-	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles/11); //TODO: pintar todas
-	  DibujaCirculo(localize->mean[0], localize->mean[1], localize->variance, verde);
+	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles);
+	  DibujaCirculo(localize->mean[0], localize->mean[1], localize->variance, azul);
 	  DibujaCirculo(position2d_amcl->px, position2d_amcl->py, RADIO_AZUL, azul);
 
 	  printf("(%g, %g) var %g\n", localize->mean[0], localize->mean[1], localize->variance);
