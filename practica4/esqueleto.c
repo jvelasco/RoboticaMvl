@@ -1,7 +1,22 @@
+/* ROBÓTICA MÓVIL
+ *
+ * Práctica 4.
+ * Alumnos:
+ * 		Miguel Martínez Rey
+ * 		Jose Francisco Velasco Cerpa
+ *
+ */
+
+
 #include <stdio.h>
 #include <math.h>
 
 #define RADIO_AZUL 0.5
+
+/* Debe ser igual o mayor que el parámetro pf_max_samples del dispositivo amcl
+ * en practica4.cfg
+ */
+#define PF_MAX_SAMPLES 250000
 
 #include <libplayerc/playerc.h>
 
@@ -30,7 +45,9 @@ main(int argc, const char **argv)
   //drawing
   player_point_2d_t *puntos;
   player_color_t rojo, verde, azul;
-  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(10000)); //(1) punto
+
+  /* Reserva de memoria para almacenar los puntos para dibujar las partículas */
+  puntos=(player_point_2d_t *)malloc(sizeof(player_point_2d_t)*(PF_MAX_SAMPLES));
   rojo.red=255; rojo.green=0; rojo.blue=0;
   verde.red=0; verde.green=128; verde.blue=0;
   azul.red=0; azul.green=0; azul.blue=255;
@@ -61,11 +78,12 @@ main(int argc, const char **argv)
       fprintf(stderr, "error: %s\n", playerc_error_str());
       return -1;
     }
-
+    
+  /* Posición inicial desconocida
+   
   // Fixing initial position
-  //playerc_position2d_set_odom(position2d,5.0,0.0,1.57);
-
-  // Create and subscribe to a sonar device
+  playerc_position2d_set_odom(position2d,5.0,0.0,1.57);
+  */
   
   // Create and subscribe to a graphics device
   graficos = playerc_graphics2d_create(client, 0);
@@ -75,7 +93,7 @@ main(int argc, const char **argv)
       return -1;
     }
 
-  //crear y suscribir localize
+  /* crear y suscribir proxy localize */
   localize = playerc_localize_create(client,0);
   if (playerc_localize_subscribe(localize, PLAYER_OPEN_MODE) != 0)
     {
@@ -83,7 +101,7 @@ main(int argc, const char **argv)
       return -1;
     }
 
-  //crear set de particulas
+  /* crear set de particulas */
   playerc_localize_get_particles(localize);
 
 
@@ -99,7 +117,8 @@ main(int argc, const char **argv)
       position2d_target.py = arrayy[i];
       position2d_target.pa = arraya[i];
       
-      // Move to pose  
+      // Move to pose 
+      /* los comandos se envían al dispositivo position2d:1 que provee el driver VFH que se encarga de evitar obstáculos */ 
       playerc_position2d_set_cmd_pose(position2d_vfh, position2d_target.px , position2d_target.py, position2d_target.pa , 1);
 
       // Stop when reach the target
@@ -107,37 +126,40 @@ main(int argc, const char **argv)
 	{
 	  // Wait for new data from server
 	  playerc_client_read(client);
+	  
+	  /* Obtener la información de las partículas */
 	  playerc_localize_get_particles(localize);
 
 	  
 	  // Print current robot pose
+	  /* La pose del robot se obtiene del dispositivo position2d:2 que proporciona el driver amcl en vez del position2d:0 propio del robot */
 	   printf("position2d : x %f y %f th %f stall %d\n",position2d_amcl->px, position2d_amcl->py, position2d_amcl->pa, position2d_amcl->stall); 
-	  // What does mean stall?
-	  // x, y, th, world frame or robot frame?
 
 	  // Clear screen
 	  playerc_graphics2d_clear(graficos); 
 
 
-	  // Draw current robot pose
 	   printf("num particulas: %d num hipotesis %d\n",localize->num_particles,localize->hypoth_count);
-	  for(p=0;p<localize->num_particles;p+=10){ // TODO: provisional..
-	  
+	  for(p=0;p<localize->num_particles;p++){
 	    puntos[p].px=(float)(localize->particles[p].pose[0]);
 	    puntos[p].py=(float)(localize->particles[p].pose[1]);
 	  }
 	  // Fix colour
 	  playerc_graphics2d_setcolor (graficos, rojo); 
-	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles/11); //TODO: pintar todas
-	  DibujaCirculo(localize->mean[0], localize->mean[1], localize->variance, verde);
+	  
+	  /* Dibujar partículas: color rojo */
+	  playerc_graphics2d_draw_points (graficos, puntos, localize->num_particles);
+	  
+	  /* Dibujar círculo con la posición media y radio igual a la varianza: azul (el verde no se ve bien) */
+	  DibujaCirculo(localize->mean[0], localize->mean[1], localize->variance, azul);
+	  
+	  /* Dibujar círculo de radio fijo con la hipótesis más probable: azul */
 	  DibujaCirculo(position2d_amcl->px, position2d_amcl->py, RADIO_AZUL, azul);
 
 	  printf("(%g, %g) var %g\n", localize->mean[0], localize->mean[1], localize->variance);
-	  
-	  // Print sonar readings
-	
+
 	}
-    }
+  }
 
 
   // Unsuscribe and Destroy

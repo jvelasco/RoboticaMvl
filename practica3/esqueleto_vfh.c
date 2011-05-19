@@ -116,13 +116,6 @@ int main(int argc, const char **argv)
 	    ("Mapa %dx%d celdas, resolucion %.4g m/celda, origen en [%.4g,%.4g]\n",
 	     mapa->width, mapa->height, mapa->resolution, mapa->origin[0],
 	     mapa->origin[1]);
-	/* El mapa es retornado como un array de (height*width) bytes, donde cada elemento representa la ocupación de una celda. Si la celda está ocupada el valor asociado es positivo (+1) y en caso contrario negativo (-1).
-
-	   Resultado del printf:
-
-	   Mapa 480x280 celdas, resolucion 0.025 m/celda, origen en [-6,-3.5]
-
-	 */
 
 	for (i = 0; i < 5; i++) {
 		position2d_target.px = arrayx[i];
@@ -130,6 +123,12 @@ int main(int argc, const char **argv)
 		position2d_target.pa = arraya[i];
 
 		// Move to pose  
+/* Usamos el driver VFH+ para mover el robot. Los comandos set_cmd_pose se
+ * envían al dispositivo position2d:1 que es el que provee el driver VFH.  La
+ * evitación de obstáculos está a cargo de este driver, el cual se encargará de
+ * actuar sobre el dispotivo positon2d:0. Por ello, en el código no es
+ * necesario hacer nada.
+ */
 		playerc_position2d_set_cmd_pose(position2d,
 						position2d_target.px,
 						position2d_target.py,
@@ -145,36 +144,7 @@ int main(int argc, const char **argv)
 			puntos[0].py = position2d->py;
 			playerc_graphics2d_draw_points(gfx_mapa, puntos, 1);
 
-#if 0
-			/* Situar al robot en el mapa */
-			x_map = (position2d->px - mapa->origin[0]) / mapa->resolution;
-			y_map = (position2d->py - mapa->origin[1]) / mapa->resolution;
 
-			/* Dibujar en la consola el entorno cercano al robot */
-			printf("\f");
-			printf("---------------------------\n");
-			for (iy = (y_map + DISPLAY_HEIGHT < mapa->height) ?
-			          y_map + DISPLAY_HEIGHT :
-			          mapa->height;
-			     iy > y_map - DISPLAY_HEIGHT && iy > 0;
-			     iy -= DISPLAY_STEP) {
-				printf("|");
-				for (ix = (x_map - DISPLAY_WIDTH > 0) ?
-				          x_map - DISPLAY_WIDTH : 0;
-				     ix < x_map + DISPLAY_WIDTH &&
-                                     ix < mapa->width;
-				     ix += DISPLAY_STEP) {
-					if ((ix > (x_map - DISPLAY_STEP/2)) && (ix < (x_map + DISPLAY_STEP/2)) && (iy > (y_map - DISPLAY_STEP/2)) && (iy < (y_map + DISPLAY_STEP/2))) {
-						printf("0");
-					} else {
-						printf("%c", mapa-> cells[PLAYERC_MAP_INDEX (mapa, ix, iy)] > 0 ? '#' : ' ');
-					}
-				}
-				printf("|\n");
-			}
-			printf("--------------------------- [%d %d]\n", x_map, y_map);
-
-#endif
 			// Print sonar readings
 			if (playerc_sonar_get_geom(sonar) != 0) {
 				fprintf(stderr, "error: %s\n",
@@ -203,55 +173,14 @@ int main(int argc, const char **argv)
 				    position2d->py +
 				    perimetro[is].py * cos(position2d->pa) +
 				    perimetro[is].px * sin(position2d->pa);
-				playerc_graphics2d_draw_points(gfx_mapa, puntos,
-							       1);
-				/* área de seguridad */
-				//if  (sonar->scan[is] < SECURITY_THRESHOLD) {
-				//	stop_go++;
-				//}
+				playerc_graphics2d_draw_points(gfx_mapa, puntos, 1);
+
 			}
 
 			/* dibjuar los puntos calculados */
 			playerc_graphics2d_clear(gfx_robot);
 			playerc_graphics2d_draw_polyline(gfx_robot, perimetro, sonar->scan_count);
 
-#if 0
-			if (stop_go) {	/* Obstáculo detectado: parar  */
-				printf("Sonar %g %g\n",sonar->scan[3],sonar->scan[4]);
-
-				if((sonar->scan[2]< 0.3) ||
-				   (sonar->scan[3]< 0.3) ||
-                                   (sonar->scan[4]< 0.3) ||
-				   (sonar->scan[5]< 0.3)) {
-					if(sonar->scan[3] * sonar->scan[2] >
-					   sonar->scan[4] * sonar->scan[5]) { /* Obstáculo por la derecha */
-						/* girar a la izquierda */
-						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,0.3, 1))
-							return -1;
-					} else { /* Obstáculo por la izquierda */
-						/* girar a la derecha */
-						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,-0.3, 1))
-							return -1;
-					}
-				} else {
-					/* De frente */
-					if (0 != playerc_position2d_set_cmd_vel(position2d, 0.1, 0,0, 1))
-						return -1;
-				}
-				
-				  
-			} else if (stop_go_prev) {	/* No hay obstáculo y estamos parados: reanudar la marcha */
-				playerc_position2d_set_cmd_pose(position2d,
-								position2d_target.
-								px,
-								position2d_target.
-								py,
-								position2d_target.
-								pa, 1);
-			}
-			stop_go_prev = stop_go;
-			stop_go = 0;
-#endif
 
 		}
 	}

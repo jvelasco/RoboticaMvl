@@ -201,11 +201,19 @@ int main(int argc, const char **argv)
 				    position2d->py +
 				    perimetro[is].py * cos(position2d->pa) +
 				    perimetro[is].px * sin(position2d->pa);
-				playerc_graphics2d_draw_points(gfx_mapa, puntos,
-							       1);
+				playerc_graphics2d_draw_points(gfx_mapa, puntos, 1);
+
+/* Área de seguridad: Es el área alrededor del robot en la cual, si existe un
+ * objeto, el robot modifica su comportamiento normal (ir al siguiente punto de
+ * la ruta en línea recta) para evitar el obstáculo.
+ *
+ * Se define los siguientes valores constantes:
+ *  -SECURITY_THRESHOLD: distancia de seguridad para los sensores delanteros
+ *                       del Robot.
+ *  -SECURITY_THRESHOLD/2: distancia de seguridad para los demás sensores.
+ */
 				if((is<=5)&&(is>=2))
 				{
-				  /* área de seguridad */
 				  if  (sonar->scan[is] < SECURITY_THRESHOLD) {
 				    stop_go++;
 				  }
@@ -218,7 +226,7 @@ int main(int argc, const char **argv)
 				}
 			}
 
-			/* dibjuar los puntos calculados */
+			/* dibujar el perímetro calculado */
 			playerc_graphics2d_clear(gfx_robot);
 			playerc_graphics2d_draw_polyline(gfx_robot, perimetro, sonar->scan_count);
 
@@ -230,23 +238,23 @@ int main(int argc, const char **argv)
                                    (sonar->scan[4]< 0.3) ||
 				   (sonar->scan[5]< 0.3)) {
 					if(sonar->scan[3] * sonar->scan[2] >
-					   sonar->scan[4] * sonar->scan[5]) { /* Obstáculo por la derecha */
+					   sonar->scan[4] * sonar->scan[5]) { /* Si hay obstáculo por la derecha muy cerca del robot: */
 						/* girar a la izquierda */
 						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,0.3, 1))
 							return -1;
-					} else { /* Obstáculo por la izquierda */
+					} else { /* Si hay obstáculo por la izquierda muy cerca del robot: */
 						/* girar a la derecha */
 						if (0 != playerc_position2d_set_cmd_vel(position2d, 0.00, 0,-0.3, 1))
 							return -1;
 					}
-				} else {
-					/* De frente */
+				} else {/* Si no hay obstáculo por delante, o no esta muy cerca: */
+					/* De frente despacio */
 					if (0 != playerc_position2d_set_cmd_vel(position2d, 0.1, 0,0, 1))
 						return -1;
 				}
 				
 				  
-			} else if (stop_go_prev) {	/* No hay obstáculo y estamos parados: reanudar la marcha */
+			} else if (stop_go_prev) {	/*Si no hay obstáculo y estamos parados: reanudar la marcha */
 				playerc_position2d_set_cmd_pose(position2d,
 								position2d_target.
 								px,
