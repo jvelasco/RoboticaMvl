@@ -144,6 +144,7 @@ main(int argc, const char **argv)
 	    puntos[p].px=(float)(localize->particles[p].pose[0]);
 	    puntos[p].py=(float)(localize->particles[p].pose[1]);
 	  }
+
 	  // Fix colour
 	  playerc_graphics2d_setcolor (graficos, rojo); 
 	  
