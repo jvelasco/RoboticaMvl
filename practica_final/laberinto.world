@@ -1,5 +1,5 @@
-include "pioneer.inc"
-include "map.inc"
+include "/home/alumno/Stage-3.2.2-Source/worlds/pioneer.inc"
+include "/home/alumno/Stage-3.2.2-Source/worlds/map.inc"
 
 
 name "LABERINTO"
