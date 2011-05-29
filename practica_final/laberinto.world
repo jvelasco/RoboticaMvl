@@ -11,6 +11,7 @@ window
   center [0 0]     # Origen en metros (0,0) en esquina inferior izquierda
   scale 72.8           # 364 pixeles -> 5 metros
   show_grid 1
+  show_data 1
 )
 
 
