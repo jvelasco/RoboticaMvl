@@ -25,6 +25,8 @@ typedef struct str_celda
   int pos[2];
 }celda;
 
+int girar_izq(playerc_client_t *client,playerc_position2d_t *position2d);
+int girar_dch(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_delante(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_izq(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_dch(playerc_client_t *client,playerc_position2d_t *position2d);

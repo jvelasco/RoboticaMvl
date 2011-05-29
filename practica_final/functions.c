@@ -17,6 +17,32 @@
 const double PI_OVER_2 = 1.57079632679489661923;
 const double  PI = 3.14159265358979323846;
 
+int girar_izq(playerc_client_t *client,playerc_position2d_t *position2d)
+{
+  double target_a;
+
+  target_a=fmod((round(position2d->pa/PI_OVER_2)+1),4.0)*PI_OVER_2;
+ 
+  playerc_position2d_set_cmd_pose(position2d, position2d->px , 
+				  position2d->py, target_a , 1);
+  while (fmod(fabs(position2d->pa - target_a),2*PI)>0.01)
+    playerc_client_read(client);
+  return 0;
+}
+
+int girar_dch(playerc_client_t *client,playerc_position2d_t *position2d)
+{
+  double target_a;
+
+  target_a=fmod((round(position2d->pa/PI_OVER_2)-1),4.0)*PI_OVER_2;
+ 
+  playerc_position2d_set_cmd_pose(position2d, position2d->px , 
+				  position2d->py, target_a , 1);
+  while (fmod(fabs(position2d->pa - target_a),2*PI)>0.01)
+    playerc_client_read(client);
+  return 0;
+}
+
 int ir_celda_delante(playerc_client_t *client,playerc_position2d_t *position2d)
 {
   double target_x,target_y;
@@ -35,28 +61,15 @@ int ir_celda_delante(playerc_client_t *client,playerc_position2d_t *position2d)
 
 int ir_celda_izq(playerc_client_t *client,playerc_position2d_t *position2d)
 {
-  double target_a;
+  girar_izq(client,position2d);
   
-  target_a=fmod((round(position2d->pa/PI_OVER_2)+1),4.0)*PI_OVER_2;
- 
-  playerc_position2d_set_cmd_pose(position2d, position2d->px , 
-				  position2d->py, target_a , 1);
-  while (fmod(fabs(position2d->pa - target_a),2*PI)>0.01)
-    playerc_client_read(client);
-
   ir_celda_delante(client,position2d);
   return 0;
 }
+
 int ir_celda_dch(playerc_client_t *client,playerc_position2d_t *position2d)
 {
-  double target_a;
-  
-  target_a=fmod((round(position2d->pa/PI_OVER_2)-1),4.0)*PI_OVER_2;
- 
-  playerc_position2d_set_cmd_pose(position2d, position2d->px , 
-				  position2d->py, target_a , 1);
-  while (fmod(fabs(position2d->pa - target_a),2*PI)>0.01)
-    playerc_client_read(client);
+  girar_dch(client,position2d);
 
   ir_celda_delante(client,position2d);
   return 0;
@@ -64,7 +77,7 @@ int ir_celda_dch(playerc_client_t *client,playerc_position2d_t *position2d)
 
 int ir_celda_detras(playerc_client_t *client,playerc_position2d_t *position2d)
 {
-  double target_a;
+  /*double target_a;
   
   target_a=fmod((round(position2d->pa/PI_OVER_2)+2),4.0)*PI_OVER_2;
  
@@ -73,8 +86,10 @@ int ir_celda_detras(playerc_client_t *client,playerc_position2d_t *position2d)
   while (fmod(fabs(position2d->pa - target_a),2*PI)>0.1)
   {
     playerc_client_read(client);
-    printf("angulo: %g (%g,%g) \n",fabs(fmod(position2d->pa,2*PI) - target_a),position2d->pa,target_a);
-  }
+    printf("angulo: %g (%g,%g) \n",fmod(fabs(position2d->pa - target_a),2*PI),position2d->pa,target_a);
+  }*/
+  girar_dch(client,position2d);
+  girar_dch(client,position2d);
   ir_celda_delante(client,position2d);
   return 0;
 }

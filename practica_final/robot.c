@@ -52,6 +52,7 @@ int main(int argc, const char **argv)
 	int vengo,voy;
 	int forward=1;
 	int no_solucion=0;
+	int flag_celda_final=0;
 
 	// Create a client and connect it to the server.
 	client = playerc_client_create(NULL, "localhost", 6665);
@@ -97,7 +98,48 @@ int main(int argc, const char **argv)
 	inspeccionar_celda(sonar,celda_actual);
 	celda_actual->celda_origen=NULL;
 
-	while(!celda_final(celda_actual)&&!no_solucion)
+	//Rutina para asegurarse de que ni nos dejamos un camino atrás,
+	//ni estamos ya en la salida:"Ponemos el culo contra la pared"
+	
+	if(celda_final(celda_actual))//Si no veo ninguna pared
+	{
+	  flag_celda_final=1;
+	  girar_dch(client,position2d);
+	  inspeccionar_celda(sonar,celda_actual);
+	  if(celda_actual->pared[2])//Si despues de girar a la dcha no
+				    //encuentro pared a mi dcha;
+	  {
+	    girar_izq(client,position2d);//volvemos a la posición original.
+	    inspeccionar_celda(sonar,celda_actual);
+	    flag_celda_final=0;
+	  }
+	}
+	else
+	{
+	  flag_celda_final=0;
+	  if(celda_actual->pared[2])//si tengo pared a la dcha
+	  {
+	    girar_izq(client,position2d);
+	    inspeccionar_celda(sonar,celda_actual);
+	  }
+	  
+	  else 
+	  {
+	    if(celda_actual->pared[0])//si tengo pared a la izda
+	    {
+	      girar_dch(client,position2d);
+	      inspeccionar_celda(sonar,celda_actual);
+	    }
+	    else if(celda_actual->pared[1]); //si la tengo en fente
+	    {
+	      girar_dch(client,position2d);
+	      girar_dch(client,position2d);
+	      inspeccionar_celda(sonar,celda_actual);
+	    }
+	  }
+	}
+
+	while(!flag_celda_final&&!no_solucion)
 	{
 	  printf("celda: %d\n",celdas_visitadas);
 	  if(forward)
@@ -205,7 +247,7 @@ int main(int argc, const char **argv)
 	    
 	  }
 	  
-
+	  flag_celda_final=celda_final(celda_actual);
 	}
 
 	for (i = 0; i < 50; i++)
