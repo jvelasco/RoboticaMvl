@@ -1,8 +1,8 @@
-/* ROBÃ“TICA MÃ“VIL
+/* ROBÓÓTICA MÓVIL
  *
- * PrÃ¡ctica 3.
+ * Práctica 3.
  * Alumnos:
- * 		Miguel MartÃ­nez Rey
+ * 		Miguel Martínez Rey
  * 		Jose Francisco Velasco Cerpa
  */
 
@@ -11,45 +11,21 @@
 
 #include <libplayerc/playerc.h>
 #include "laberinto.h"
-#define SECURITY_THRESHOLD 0.65
 
-#define DISPLAY_WIDTH	50
-#define DISPLAY_HEIGHT	50
-#define DISPLAY_STEP	4
+int mejor_ruta(celda* c, int* forward);
 
 int main(int argc, const char **argv)
 {
-	int i, is;
+	int r, i;
 	playerc_client_t *client;
 	playerc_position2d_t *position2d;
-	player_pose2d_t position2d_target;
-	double arrayx[5] = { 5.0, -5.0, -5.0, 5.0, 5.0 };
-	double arrayy[5] = { 2.5, 2.5, -2.5, -2.5, 0.0 };
-	double arraya[5] = { 3.14, -1.57, 0.0, 1.57, 1.57 };
-	int stop_go, stop_go_prev;	//0- sin obtaculo, 1-parado
-
 
 
 	//sonar
 	playerc_sonar_t *sonar;
 
-	//laser
-
-	//drawing
-	playerc_graphics2d_t *gfx_robot;
-	playerc_graphics2d_t *gfx_mapa;
-	player_point_2d_t *puntos;
-	player_point_2d_t *perimetro;
-	player_color_t color;
-	puntos = (player_point_2d_t *) malloc(sizeof(player_point_2d_t) * (1));	//(1) punto
-	color.red = 255;
-	color.green = 0;
-	color.blue = 0;
-
-	celda celda_mat[25];
-	celda *celda_actual=celda_mat;
-	int celdas_visitadas=0;
-	int vengo,voy;
+	celda celdas[25];
+	int actual=0;
 	int forward=1;
 	int no_solucion=0;
 	int flag_celda_final=0;
@@ -76,193 +52,71 @@ int main(int argc, const char **argv)
 		fprintf(stderr, "error: %s\n", playerc_error_str());
 		return -1;
 	}
-/* Obtener la geometrÃ­a de los sensores de ultrasonidos sobre el pioneer 2 */
+/* Obtener la geometría de los sensores de ultrasonidos sobre el pioneer 2 */
 	if (playerc_sonar_get_geom(sonar) != 0) {
 		fprintf(stderr, "error: %s\n", playerc_error_str());
 		return -1;
 	}
-
-
-
-	// Create and subscribe to a graphics device
-	/* gfx_robot: para dibujar sobre el robot con el sistema de coordenadas del robot.
-	 * gfx_mapa: para dibujar sobre el mapa con el sistema de coordenadas global.
-	 */
-
 
 	// Enable motors 
 	playerc_position2d_enable(position2d, 1);
 
 	playerc_client_read(client);
 
-	inspeccionar_celda(sonar,celda_actual);
-	celda_actual->celda_origen=NULL;
+	inspeccionar_celda(sonar,&celdas[actual]);
 
 	//Rutina para asegurarse de que ni nos dejamos un camino atrás,
 	//ni estamos ya en la salida:"Ponemos el culo contra la pared"
 	
-	if(celda_final(celda_actual))//Si no veo ninguna pared
-	{
-	  flag_celda_final=1;
-	  girar_dch(client,position2d);
-	  inspeccionar_celda(sonar,celda_actual);
-	  if(celda_actual->pared[2])//Si despues de girar a la dcha no
-				    //encuentro pared a mi dcha;
-	  {
-	    girar_izq(client,position2d);//volvemos a la posición original.
-	    inspeccionar_celda(sonar,celda_actual);
-	    flag_celda_final=0;
-	  }
-	}
-	else
-	{
-	  flag_celda_final=0;
-	  if(celda_actual->pared[2])//si tengo pared a la dcha
-	  {
-	    girar_izq(client,position2d);
-	    inspeccionar_celda(sonar,celda_actual);
-	  }
-	  
-	  else 
-	  {
-	    if(celda_actual->pared[0])//si tengo pared a la izda
-	    {
-	      girar_dch(client,position2d);
-	      inspeccionar_celda(sonar,celda_actual);
-	    }
-	    else if(celda_actual->pared[1]); //si la tengo en fente
-	    {
-	      girar_dch(client,position2d);
-	      girar_dch(client,position2d);
-	      inspeccionar_celda(sonar,celda_actual);
-	    }
-	  }
-	}
-
-	while(!flag_celda_final&&!no_solucion)
-	{
-	  printf("celda: %d\n",celdas_visitadas);
-	  if(forward)
-	  {
-	    for(i=0;i<3;i++)
-	    {
-	    
-	      if(!celda_actual->pared[i])
-	      {
-		celdas_visitadas++;
-		switch(i)
-		{
-		case 0:
-		  ir_celda_izq(client,position2d);
-		  //celda_actual->izquierda=&celda_mat[celdas_visitadas];
-		  break;
-		case 1:
-		  ir_celda_delante(client,position2d);
-		  //celda_actual->delante=&celda_mat[celdas_visitadas];
-		  break;
-		case 2:
-		  ir_celda_dch(client,position2d);
-		  //celda_actual->derecha=&celda_mat[celdas_visitadas];
-		  break;
-
+	if(celda_final(&celdas[actual])) {//Si no veo ninguna pared
+		girar_dch(client,position2d); // giro para comprobar la espalda
+		inspeccionar_celda(sonar,&celdas[actual]);
+		if(celdas[actual].pared[D_DCH]) { // había pared detrás
+	    		girar_izq(client,position2d); 
+			inspeccionar_celda(sonar,&celdas[actual]);
+		} else {
+			printf("Ya estamos en la salida\n");
+			flag_celda_final=1;
 		}
-		celda_actual->celda_destino=&celda_mat[celdas_visitadas];
-		celda_actual->pared[i]=2;//En ruta
-		celda_mat[celdas_visitadas].celda_origen=celda_actual;
-		celda_actual=&celda_mat[celdas_visitadas];
-		playerc_client_read(client);
-		inspeccionar_celda(sonar,celda_actual);
-		break;
-	      }
-	      
-	    }
-	    if(i==3) //Si son todo paredes
-	    {
-	      forward=0;
-	      ir_celda_detras(client,position2d);
-	      celda_actual=celda_actual->celda_origen;
-	      celdas_visitadas--;
-	    }
-	  }
-	  else
-	  {
-	    for(i=0;i<3;i++)
-	    {
-	      voy=3; //Peor caso: he probado todas las alernativas;
-	      if(celda_actual->pared[i]==2)
-	      {
-		celda_actual->pared[i]=3;//NO SOLUCION
-		vengo=i;
-	      }
-	      else if(!celda_actual->pared[i])
-	      {
-		voy=i;
-		forward=1;
-		break;
-	      }
-	      
-	    }
-	    printf("Vengo de %d, voy a %d\n",vengo,voy);
-	   
-	    if((celda_actual->celda_origen!=NULL)||voy!=3)
-	    {
-	      no_solucion=0;
-	      switch(voy-vengo)
-	      {
-	      case 1:
-		ir_celda_izq(client,position2d);
-		break;
-	      case 2:
-		ir_celda_delante(client,position2d);
-		break;
-	      case 3:
-		ir_celda_dch(client,position2d);
-		break;
-		
-	      }
-	    
-	      switch(voy)
-	      {
-	      case 1:case 2:
-		celdas_visitadas++;
-		celda_actual->celda_destino=&celda_mat[celdas_visitadas];
-		celda_actual->pared[voy]=2;//En ruta
-		celda_mat[celdas_visitadas].celda_origen=celda_actual;
-		celda_actual=&celda_mat[celdas_visitadas];
-		playerc_client_read(client);
-		inspeccionar_celda(sonar,celda_actual);
-		break;
-		
-	      case 3:
-		celda_actual=celda_actual->celda_origen;
-		celdas_visitadas--;
-	      }
-	    }
-	    else 
-	    {
-	      no_solucion=1;
-	      printf("no hay solucion\n");
-	    }
-	   
-	    
-	  }
-	  
-	  flag_celda_final=celda_final(celda_actual);
+	} else {
+		// me pongo de espaldas a la pared
+		if(celdas[actual].pared[D_DCH]) { //si tengo pared a la dcha
+			girar_izq(client,position2d); 
+		} else if(celdas[actual].pared[D_IZQ]) { //si tengo pared a la izda
+			girar_dch(client,position2d);
+		} else if(celdas[actual].pared[D_ARRIBA]) { //si la tengo en fente
+			girar_dch(client,position2d);
+			girar_dch(client,position2d);
+		}
+		inspeccionar_celda(sonar,&celdas[actual]);
 	}
 
-	for (i = 0; i < 50; i++)
-	{
-	  playerc_client_read(client);
-
-	  // Print current robot pose
-	  printf("position2d : %f %f %f\n",
-		 position2d->px, position2d->py, position2d->pa);
+	while(!(flag_celda_final || no_solucion)) {
+		printf("celda: %d [%d,%d]\n",actual, x, y);
+		r = mejor_ruta(&celdas[actual], &forward);
+		if (forward) {
+			ir_direccion(client, position2d, r);
+			actual++;
+			// playerc_client_read(client); ?? no hace falta
+			inspeccionar_celda(sonar,&celdas[actual]);
+		} else if (actual > 0) {
+			ir_direccion(client, position2d, r);
+			actual--;
+		} else {
+			no_solucion=1;
+			printf("no hay solucion\n");
+		}
+		
+		if ((flag_celda_final = celda_final(&celdas[actual])) != 0) {
+			printf("Fuera del laberinto!!\n\n");
+			printf("Camino:\n");
+			printf("-------\n");
+			for (i=0; i <= actual; i++) {
+				printf("(%d,%d), ", celdas[i].pos[0], celdas[i].pos[1]);
+			}
+			printf("final\n");
+		}
 	}
-
-
-
-
-
 
 
 	// Unsuscribe and Destroy
@@ -281,4 +135,67 @@ int main(int argc, const char **argv)
 
 	// End
 	return 0;
+}
+
+int mejor_ruta(celda* c, int* forward)
+{
+	int i, i_opt;
+	int mejor_puntuacion=-1, puntuacion, mejor_opcion=-1;
+	int nx, ny, ntheta, giro;
+	for (i = 0; i < 3; i++) {
+		puntuacion = 0;
+		if (c->pared[i] != NO_MURO) {
+			continue;
+		}
+		if (i == D_ARRIBA) {
+			puntuacion+=50; //favorecer ir hacia alante
+		}
+
+		puntuacion += rand()%5; // para desempatar (por si acaso)
+
+		// si forward=1, c->orientacion y theta deben ser iguales
+		giro = DEG2DIR(DIR2DEG(c->orientacion) - DIR2DEG(theta) + DIR2DEG(i));
+		ntheta = DEG2DIR(DIR2DEG(theta) + DIR2DEG(giro));
+
+		switch (ntheta) {
+		case D_IZQ:
+			nx = x - 1;
+			ny = y;
+			break;
+		case D_ARRIBA:
+			nx = x;
+			ny = y + 1;
+			break;
+		case D_DCH:
+			nx = x + 1;
+			ny = y;
+			break;
+		case D_ABAJO:
+			nx = x;
+			ny = y - 1;
+			break;
+		}
+		if (nx >= xmax || nx <= xmin || ny >= ymax || ny <= ymin) {
+			puntuacion +=100; // favorecer ir hacia los bordes
+		}
+ 		// TODO: comprobar bucles aquí y dar puntuación -10.
+
+
+		if (puntuacion > mejor_puntuacion) {
+			mejor_puntuacion = puntuacion;
+			mejor_opcion = giro;
+			i_opt = i;
+		}
+		printf("Opcion %s (a [%d,%d]) %d puntos\n", dirs[giro], nx, ny, puntuacion);
+	}
+	if (mejor_opcion >= 0) {
+		*forward = 1;
+		c->pared[i_opt]=PROBADO; //en ruta
+		printf("Gana opcion %s\n", dirs[i_opt]);
+		return mejor_opcion;
+	} else { //ninguna opción válida
+		*forward = 0;
+		return DEG2DIR(DIR2DEG(c->orientacion) - DIR2DEG(theta) + 180); // volver por donde se ha venido
+	}
+
 }

@@ -29,7 +29,7 @@ amigobot
   name "robot"
   gui_nose 1
   color "red"
-  pose [-2.0 -2.0 0 0]   
+  pose [1.0 1.0 0 0]   
 
   localization "odom"
   odom_error [ 0.05 0.05 0 0.05 ]

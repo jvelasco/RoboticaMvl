@@ -11,20 +11,31 @@
 #ifndef _LABERINTO_H
 #define _LABERINTO_H
 
-typedef struct str_celda
-{/*
-  struct str_celda *delante;
-  struct str_celda *derecha;
-  struct str_celda *izquierda;*/
-  struct str_celda *celda_destino;
-  struct str_celda *celda_origen;
+#define D_DCH   	0
+#define D_ARRIBA	1
+#define D_IZQ   	2
+#define D_ABAJO 	3
 
-  int pared[3]; //1: si hay pared, izq, delante, dcha (detras nunca
-		 //va a haber porque es de donde vengo)
+#define DIR2DEG(dir)	(((dir)-1) * 90)	// convertir a ángulo
+#define DEG2DIR(ang)	(((ang)/90 + 5) % 4)	// convertir a valores de 0 a 3
 
-  int pos[2];
-}celda;
+#define NO_MURO 	0
+#define HAY_MURO	1
+#define PROBADO      	2
 
+const char *dirs[3];
+
+typedef struct str_celda {
+	//struct str_celda *celda_destino;
+	//struct str_celda *celda_origen;
+
+	int pared[3];
+
+	int pos[2];
+	int orientacion;
+} celda;
+
+extern int x, y, xmax, xmin, ymax, ymin, theta;
 int girar_izq(playerc_client_t *client,playerc_position2d_t *position2d);
 int girar_dch(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_delante(playerc_client_t *client,playerc_position2d_t *position2d);
@@ -34,7 +45,7 @@ int ir_celda_detras(playerc_client_t *client,playerc_position2d_t *position2d);
 void inspeccionar_celda(playerc_sonar_t *sonar,celda *celda_actual);
 int celda_final(celda *celda_actual);
 
-
+int ir_direccion(playerc_client_t * client, playerc_position2d_t * position2d, int dir);
 
 
 #endif
