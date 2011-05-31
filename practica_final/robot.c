@@ -12,11 +12,11 @@
 #include <libplayerc/playerc.h>
 #include "laberinto.h"
 
-int mejor_ruta(celda* c, int* forward);
+int mejor_ruta(celda* celdas, int actual, int* forward);
 
 int main(int argc, const char **argv)
 {
-	int r, i;
+	int r, i, j;
 	playerc_client_t *client;
 	playerc_position2d_t *position2d;
 
@@ -73,6 +73,8 @@ int main(int argc, const char **argv)
 		inspeccionar_celda(sonar,&celdas[actual]);
 		if(celdas[actual].pared[D_DCH]) { // había pared detrás
 	    		girar_izq(client,position2d); 
+			//establecer orientación de referencia aquí
+			theta = D_ARRIBA;
 			inspeccionar_celda(sonar,&celdas[actual]);
 		} else {
 			printf("Ya estamos en la salida\n");
@@ -85,19 +87,20 @@ int main(int argc, const char **argv)
 		} else if(celdas[actual].pared[D_IZQ]) { //si tengo pared a la izda
 			girar_dch(client,position2d);
 		} else if(celdas[actual].pared[D_ARRIBA]) { //si la tengo en fente
-			girar_dch(client,position2d);
-			girar_dch(client,position2d);
+			girar_180(client,position2d);
 		}
+		//establecer orientación de referencia aquí
+		theta = D_ARRIBA;
 		inspeccionar_celda(sonar,&celdas[actual]);
 	}
 
+
 	while(!(flag_celda_final || no_solucion)) {
 		printf("celda: %d [%d,%d]\n",actual, x, y);
-		r = mejor_ruta(&celdas[actual], &forward);
+		r = mejor_ruta(celdas, actual, &forward);
 		if (forward) {
 			ir_direccion(client, position2d, r);
 			actual++;
-			// playerc_client_read(client); ?? no hace falta
 			inspeccionar_celda(sonar,&celdas[actual]);
 		} else if (actual > 0) {
 			ir_direccion(client, position2d, r);
@@ -112,9 +115,9 @@ int main(int argc, const char **argv)
 			printf("Camino:\n");
 			printf("-------\n");
 			for (i=0; i <= actual; i++) {
-				printf("(%d,%d), ", celdas[i].pos[0], celdas[i].pos[1]);
+				for (j = 0; (j < 3) && (celdas[i].pared[j] != RUTA); j++) ;
+				printf("(%d,%d) - %s\n", celdas[i].pos[0], celdas[i].pos[1], dirs[j]);
 			}
-			printf("final\n");
 		}
 	}
 
@@ -137,23 +140,25 @@ int main(int argc, const char **argv)
 	return 0;
 }
 
-int mejor_ruta(celda* c, int* forward)
+int mejor_ruta(celda* celdas, int actual, int* forward)
 {
-	int i, i_opt;
-	int mejor_puntuacion=-1, puntuacion, mejor_opcion=-1;
+	int i, i_opt, j;
+	int mejor_puntuacion = 0, puntuacion, mejor_opcion = -1;
 	int nx, ny, ntheta, giro;
+	celda * c = celdas + actual;
+
+	printf("xmax %d, xmin %d, ymax %d, ymin %d\n", xmax, xmin, ymax, ymin);
 	for (i = 0; i < 3; i++) {
 		puntuacion = 0;
-		if (c->pared[i] != NO_MURO) {
+		if (c->pared[i] == RUTA) { // venimos de aqui
+			c->pared[i] = DEAD_END; // por lo tanto no hay salida
+			continue;
+		} else if (c->pared[i] != NO_MURO) { // muro o sin salida
 			continue;
 		}
-		if (i == D_ARRIBA) {
-			puntuacion+=50; //favorecer ir hacia alante
-		}
-
-		puntuacion += rand()%5; // para desempatar (por si acaso)
 
 		// si forward=1, c->orientacion y theta deben ser iguales
+		// pero si no, hay que tener en cuenta el cambio de perspectiva
 		giro = DEG2DIR(DIR2DEG(c->orientacion) - DIR2DEG(theta) + DIR2DEG(i));
 		ntheta = DEG2DIR(DIR2DEG(theta) + DIR2DEG(giro));
 
@@ -175,10 +180,27 @@ int mejor_ruta(celda* c, int* forward)
 			ny = y - 1;
 			break;
 		}
-		if (nx >= xmax || nx <= xmin || ny >= ymax || ny <= ymin) {
-			puntuacion +=100; // favorecer ir hacia los bordes
+		
+		// favorecer ir hacia los bordes
+		if ((nx > xmax) || (nx < xmin) || (ny > ymax) || (ny < ymin)) {
+			puntuacion +=200;
+		} else if ((nx == xmax) || (nx == xmin) || (ny == ymax) || (ny == ymin)) {
+			puntuacion +=100;
 		}
- 		// TODO: comprobar bucles aquí y dar puntuación -10.
+
+		if (giro == D_ARRIBA) {
+			puntuacion+=50; //favorecer ir hacia delante
+		}
+
+		puntuacion += (rand() % 4) + 1; // para hacer >0 desempatar (por si acaso)
+
+ 		// Comprobar posibles bucles.
+		for (j = 0; j < actual - 1; j++) {
+			if ((celdas[j].pos[0] == nx) && (celdas[j].pos[1] == ny)) {
+				puntuacion = -10; // ya visitado. no tomar esta ruta.
+				break;
+			}
+		}
 
 
 		if (puntuacion > mejor_puntuacion) {
@@ -190,8 +212,8 @@ int mejor_ruta(celda* c, int* forward)
 	}
 	if (mejor_opcion >= 0) {
 		*forward = 1;
-		c->pared[i_opt]=PROBADO; //en ruta
-		printf("Gana opcion %s\n", dirs[i_opt]);
+		c->pared[i_opt]=RUTA; //en ruta
+		printf("Gana opcion %s\n", dirs[mejor_opcion]);
 		return mejor_opcion;
 	} else { //ninguna opción válida
 		*forward = 0;

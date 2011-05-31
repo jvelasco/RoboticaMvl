@@ -16,14 +16,15 @@
 #define D_IZQ   	2
 #define D_ABAJO 	3
 
-#define DIR2DEG(dir)	(((dir)-1) * 90)	// convertir a ángulo
+#define DIR2DEG(dir)	(((dir)-1) * 90)	// convertir a ángulo (arriba 0, izquierda 90, derecha -90, atrás 180)
 #define DEG2DIR(ang)	(((ang)/90 + 5) % 4)	// convertir a valores de 0 a 3
 
 #define NO_MURO 	0
 #define HAY_MURO	1
-#define PROBADO      	2
+#define RUTA      	2
+#define DEAD_END      	3
 
-const char *dirs[3];
+const char *dirs[4];
 
 typedef struct str_celda {
 	//struct str_celda *celda_destino;
@@ -38,6 +39,7 @@ typedef struct str_celda {
 extern int x, y, xmax, xmin, ymax, ymin, theta;
 int girar_izq(playerc_client_t *client,playerc_position2d_t *position2d);
 int girar_dch(playerc_client_t *client,playerc_position2d_t *position2d);
+int girar_180(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_delante(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_izq(playerc_client_t *client,playerc_position2d_t *position2d);
 int ir_celda_dch(playerc_client_t *client,playerc_position2d_t *position2d);
