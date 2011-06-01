@@ -55,9 +55,9 @@ int girar_180(playerc_client_t * client, playerc_position2d_t * position2d)
 
 	playerc_position2d_set_cmd_pose(position2d, position2d->px,
 					position2d->py, target_a, 1);
-	while (fmod(fabs(position2d->pa - target_a), 2 * M_PI) > 0.01)
+	while ((fmod(fabs(position2d->pa - target_a), 2 * M_PI) > 0.01) && (fmod(fabs(position2d->pa - target_a), 2 * M_PI) < 2*M_PI - 0.01)) {
 		playerc_client_read(client);
-
+	}
 	theta = (theta + 2) % 4;
 	return 0;
 }
